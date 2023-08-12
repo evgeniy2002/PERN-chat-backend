@@ -9,24 +9,41 @@ const createSocket = (http) => {
     },
   });
 
+  const onlineUsers = new Map();
+
   io.on('connection', function (socket) {
+    // console.log(socket.id);
+
+    socket.on('USER:STATUS', (id) => {
+      if (id !== null) {
+        onlineUsers.set(socket.id, id);
+        io.emit('USER:STATUS', Array.from(onlineUsers.values()));
+      }
+    });
+
     socket.on('DIALOGS:JOIN', (roomId) => {
-      // socket.dialogId = dialogId;
-      console.log(roomId, 'adasd');
       socket.join(roomId);
     });
     socket.on('DIALOGS:NEW_MESSAGE', ({ roomId, text, userName }) => {
       const obj = {
         userName,
-
         text,
       };
-
-      // socket.emit('DIALOGS:NEW_MESSAGE', obj);
       io.to(roomId).emit('DIALOGS:NEW_MESSAGE', obj);
     });
     socket.on('DIALOGS:TYPING', (obj) => {
       socket.broadcast.emit('DIALOGS:TYPING', obj);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('User disconnected');
+      // Удаление пользователя из списка онлайн при разрыве соединения
+      const userId = socket.id;
+
+      if (userId !== undefined) {
+        onlineUsers.delete(userId);
+        io.emit('USER:STATUS', Array.from(onlineUsers.values()));
+      }
     });
   });
 
