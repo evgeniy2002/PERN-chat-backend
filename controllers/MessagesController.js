@@ -7,7 +7,7 @@ class MessagesController {
 
   create = async (req, res) => {
     try {
-      const { roomId: dialogId, text, userId } = req.body;
+      const { roomId: dialogId, text, userId, currentDialogId } = req.body;
 
       const doc = await Message.create({
         text,
@@ -16,6 +16,16 @@ class MessagesController {
       });
 
       const message = await doc.save();
+
+      // const lastMessage = await Message.findOne({
+      //   where: { dialogId },
+      //   order: [['createdAt', 'DESC']],
+      // });
+
+      // await Dialog.update(
+      //   { lastMessage: lastMessage.dataValues.text },
+      //   { where: { id: dialogId } },
+      // );
 
       this.io.emit('DIALOGS:NEW_MESSAGE', message);
 
